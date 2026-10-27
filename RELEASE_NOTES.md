@@ -1,12 +1,21 @@
-# Chojema EXIFer 릴리스 노트
+# Chojema EXIFer 릴리스 노트 / Release Notes
 
-작성자: Chulwoo Park (2026)
+작성자 / Author: Chulwoo Park (2026)
+
+각 버전은 한국어 설명 뒤에 영문(English) 설명이 이어집니다.
+Each version is described in Korean first, followed by English.
 
 버전 번호는 `주.부.수` 형식(Semantic Versioning)을 따릅니다.
 
 - 수(끝자리): 버그 수정 (예: 0.9.0 → 0.9.1)
 - 부(가운데 자리): 기능 추가 (예: 0.9.x → 0.10.0)
 - 주(앞자리): 검증을 마친 정식 출시 또는 호환성이 깨지는 변경 (예: 1.0.0)
+
+Version numbers follow `MAJOR.MINOR.PATCH` (Semantic Versioning).
+
+- PATCH: bug fixes (e.g. 0.9.0 → 0.9.1)
+- MINOR: new features (e.g. 0.9.x → 0.10.0)
+- MAJOR: verified official release or breaking changes (e.g. 1.0.0)
 
 ---
 
@@ -28,6 +37,23 @@ Chulwoo Park, 2026
 - `Chojema EXIFer-0.9.1-arm64.dmg`: Apple Silicon Mac
 - `Chojema EXIFer-0.9.1-x64.dmg`: Intel Mac
 - `Chojema EXIFer Setup 0.9.1.exe`: Windows 64비트
+
+### English
+
+#### Changes
+
+- Added a dedicated app icon. Previously the default Electron icon was shown.
+  - Design: a location pin with a clock for its head, over a photo, representing the "when (date)" and "where (GPS)" this app handles.
+  - Separate icons for macOS (`.icns`) and Windows (`.ico`). The source is `build/icon.svg`; regenerate with `npm run make:icons`.
+- Fixed installers that also bundled development files unrelated to running the app (tests, build scripts, documents).
+- The license is now MIT.
+- No feature changes.
+
+#### Installers
+
+- `Chojema EXIFer-0.9.1-arm64.dmg`: Apple Silicon Mac
+- `Chojema EXIFer-0.9.1-x64.dmg`: Intel Mac
+- `Chojema EXIFer Setup 0.9.1.exe`: Windows 64-bit
 
 ---
 
@@ -86,3 +112,57 @@ Chulwoo Park, 2026
 - `Chojema EXIFer-0.9.0-arm64.dmg`: Apple Silicon Mac
 - `Chojema EXIFer-0.9.0-x64.dmg`: Intel Mac
 - `Chojema EXIFer Setup 0.9.0.exe`: Windows 64비트
+
+### English
+
+The first public version. It is feature-complete; it will be released officially as 1.0.0 after verification on real Windows PCs and with real camera photos.
+
+#### Supported environments
+
+- OS: Windows 10/11 (64-bit), macOS (Apple Silicon, Intel)
+- File formats: JPEG, HEIC/HEIF, TIFF, WebP, PNG
+- Not supported: RAW, GIF, BMP, video
+
+#### Key features
+
+**Date/time and GPS editing**
+
+- Enter just the date taken, date modified, and time zone, and every related date tag is updated.
+  - Date taken: EXIF date taken/digitized and time zone, XMP create date, IPTC date created (JPEG, TIFF), PNG creation time, GPS date/time (computed in UTC automatically)
+  - Date modified: EXIF modify date and time zone, XMP modify/metadata date, PNG modify date
+- Values are written even when the photo had none.
+- File creation/modification times (as shown in Explorer or Finder) can be changed too.
+- "Advanced view" lists each tag to be written so you can check it, edit its value, or exclude it.
+- GPS can be kept, set anew, or removed. Set the location by clicking the map, entering coordinates, or pasting "latitude, longitude".
+
+**EXIF copy**
+
+- Place two photos side by side and copy the EXIF of the source photo to the target photo.
+- Copy everything or selected groups: date/time, GPS, camera/lens, exposure settings, author/copyright/description.
+- Option to clear the target photo's existing metadata before copying.
+- The target photo keeps its own resolution, orientation, thumbnail, manufacturer data (MakerNote), and color profile.
+- Photos of different formats can be copied between (e.g. HEIC → JPEG).
+
+**Originals preserved**
+
+- Original files are never modified. Results are always saved as a new `photo_edited.ext`. If that name already exists, a number is added, as in `photo_edited (2).ext`.
+
+#### Known limitations
+
+- The map needs an internet connection (OpenStreetMap). Without one, you can still set GPS by entering coordinates.
+- The apps are not code-signed, so a security warning appears on first launch.
+  - macOS: right-click the app and choose "Open".
+  - Windows: in the SmartScreen window, click "More info", then "Run anyway".
+- Batch processing of multiple photos is not included in this version.
+- EXIF in PNG files may not be shown by some viewers and photo apps.
+
+#### Verification status
+
+- Done: 36 automated test checks pass across JPEG, PNG, TIFF, HEIC, and WebP. Verified working on an installed macOS (Apple Silicon) build.
+- Remaining: behavior on real Windows PCs (especially changing file creation time), preview rotation of portrait iPhone photos (HEIC), real camera photos.
+
+#### Installers
+
+- `Chojema EXIFer-0.9.0-arm64.dmg`: Apple Silicon Mac
+- `Chojema EXIFer-0.9.0-x64.dmg`: Intel Mac
+- `Chojema EXIFer Setup 0.9.0.exe`: Windows 64-bit
