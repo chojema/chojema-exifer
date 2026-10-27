@@ -53,7 +53,8 @@ function showResult(el, res, onReload) {
   const warnings = res.data.warnings.length
     ? `<ul>${res.data.warnings.map((w) => `<li>${esc(w)}</li>`).join('')}</ul>` : '';
   const folderLabel = api.platform === 'darwin' ? 'Finder에서 보기' : '탐색기에서 보기';
-  el.innerHTML = `<div>저장했습니다.</div><div class="path">${esc(res.data.output)}</div>${warnings}
+  const saved = res.data.converted ? 'PNG를 JPG로 변환해 저장했습니다.' : '저장했습니다.';
+  el.innerHTML = `<div>${saved}</div><div class="path">${esc(res.data.output)}</div>${warnings}
     <div class="actions"><button type="button" class="small" data-act="folder">${folderLabel}</button>
     <button type="button" class="small" data-act="reload">저장된 파일 불러오기</button></div>`;
   el.querySelector('[data-act=folder]').onclick = () => api.showInFolder(res.data.output);
@@ -275,6 +276,7 @@ async function loadEdit(file) {
   $('#edit-result').hidden = true;
   $('#edit-form').setAttribute('aria-disabled', 'false');
   $('#save').disabled = false;
+  $('#edit-convert').hidden = meta.type !== 'PNG';
   fillInfo($('#edit-info'), meta);
 
   $('#edit-alltags').innerHTML = '<tr><th>태그</th><th>값</th></tr>' + Object.entries(meta.tags)
@@ -330,10 +332,6 @@ $('#save').addEventListener('click', async () => {
 
 const copy = { src: null, dst: null };
 
-function updateCopyButton() {
-  $('#copy').disabled = !(copy.src && copy.dst);
-}
-
 async function loadSide(side, file) {
   const meta = await loadInto($(`#${side}-drop`), file);
   copy[side] = meta;
@@ -341,6 +339,11 @@ async function loadSide(side, file) {
   else $(`#${side}-info`).innerHTML = '';
   $('#copy-result').hidden = true;
   updateCopyButton();
+}
+
+function updateCopyButton() {
+  $('#copy').disabled = !(copy.src && copy.dst);
+  $('#copy-convert').hidden = !(copy.dst && copy.dst.type === 'PNG');
 }
 
 dropZone($('#src-drop'), (f) => loadSide('src', f), '원본 사진 선택');

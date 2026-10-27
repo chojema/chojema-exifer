@@ -19,6 +19,48 @@ Version numbers follow `MAJOR.MINOR.PATCH` (Semantic Versioning).
 
 ---
 
+## 0.10.0 — 2026-10-27
+
+Chulwoo Park, 2026
+
+### 변경 사항
+
+- 저장 파일 이름을 바꿨습니다. 이전에는 `사진명_edited.확장자`였고, 이제는 촬영 일시를 이름으로 한 `YYYY-MM-DD_HH-MM-SS_ed.확장자`입니다(예: `2024-05-01_10-20-30_ed.jpg`).
+  - 일시·GPS 편집에서는 입력한 촬영 일시를, EXIF 복제에서는 복제 결과의 촬영 일시를 씁니다.
+  - 같은 이름의 파일이 이미 있으면 `2024-05-01_10-20-30_ed (2).jpg`처럼 번호를 붙입니다.
+  - 촬영 일시가 없으면 원본 파일의 수정 시각을 씁니다.
+- PNG 사진은 JPG로 변환해 저장합니다. PNG의 EXIF는 많은 뷰어와 사진 앱에서 읽지 못하기 때문입니다.
+  - 일시·GPS 편집과 EXIF 복제(대상 사진이 PNG일 때) 모두 해당합니다.
+  - 투명한 부분은 흰색이 됩니다. 기존 메타데이터와 색상 프로파일은 옮겨 담습니다.
+  - PNG를 고르면 화면에 변환 안내가 나타납니다.
+
+### 설치 파일
+
+- `Chojema EXIFer-0.10.0-arm64.dmg`: Apple Silicon Mac
+- `Chojema EXIFer-0.10.0-x64.dmg`: Intel Mac
+- `Chojema EXIFer Setup 0.10.0.exe`: Windows 64비트
+
+### English
+
+#### Changes
+
+- New output file names. Previously `name_edited.ext`; now the date taken, `YYYY-MM-DD_HH-MM-SS_ed.ext` (e.g. `2024-05-01_10-20-30_ed.jpg`).
+  - Date/GPS editing uses the date taken you entered; EXIF copy uses the date taken of the copied result.
+  - If that name already exists, a number is added, as in `2024-05-01_10-20-30_ed (2).jpg`.
+  - Without a date taken, the original file's modification time is used.
+- PNG photos are converted to JPG when saved, because many viewers and photo apps do not read EXIF in PNG.
+  - Applies to date/GPS editing and to EXIF copy when the target photo is a PNG.
+  - Transparent areas become white. Existing metadata and the color profile are carried over.
+  - A conversion notice appears when a PNG is selected.
+
+#### Installers
+
+- `Chojema EXIFer-0.10.0-arm64.dmg`: Apple Silicon Mac
+- `Chojema EXIFer-0.10.0-x64.dmg`: Intel Mac
+- `Chojema EXIFer Setup 0.10.0.exe`: Windows 64-bit
+
+---
+
 ## 0.9.1 — 2026-10-27
 
 Chulwoo Park, 2026

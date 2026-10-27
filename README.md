@@ -3,11 +3,12 @@
 **한국어** | [English](#english)
 
 사진의 촬영·수정 일시와 GPS를 수정하고, 한 사진의 EXIF를 다른 사진으로 복제하는 Windows·macOS 데스크톱 앱입니다.
-원본은 건드리지 않고 항상 `<이름>_edited.<확장자>` 새 파일로 저장합니다.
+원본은 건드리지 않고 항상 촬영 일시를 이름으로 한 새 파일 `YYYY-MM-DD_HH-MM-SS_ed.<확장자>`로 저장합니다.
+PNG는 EXIF를 읽지 못하는 앱이 많아 JPG로 변환해 저장합니다.
 
 - 작성자: Chulwoo Park (2026)
 - 라이선스: MIT — [LICENSE](LICENSE) 참고
-- 현재 버전: 0.9.1 — 변경 내역은 [RELEASE_NOTES.md](RELEASE_NOTES.md) 참고
+- 현재 버전: 0.10.0 — 변경 내역은 [RELEASE_NOTES.md](RELEASE_NOTES.md) 참고
 - 내려받기: [Releases](https://github.com/chojema/chojema-exifer/releases) 페이지
 
 - 지원 형식: JPEG, HEIC/HEIF, TIFF, WebP, PNG (RAW·GIF·BMP·동영상 제외)
@@ -51,6 +52,8 @@ Windows 빌드는 macOS에서도 만들 수 있지만, `exiftool-vendored.exe`�
 - 촬영 일시 → EXIF DateTimeOriginal/CreateDate/OffsetTime*, XMP(exif·xmp·photoshop), IPTC(JPEG·TIFF), PNG CreationTime, GPS 날짜·시각(UTC), 파일 생성 시각
 - 수정 일시 → EXIF ModifyDate/OffsetTime, XMP ModifyDate/MetadataDate, PNG ModifyDate, 파일 수정 시각
 - 파일 생성 시각: macOS는 `utimes`(과거 시각 지정 시 생성 시각도 이동), Windows는 ExifTool `FileCreateDate`
+- 저장 파일 이름: 저장된 파일의 촬영 일시(입력한 값) → `2024-05-01_10-20-30_ed.jpg`. 같은 이름이 있으면 ` (2)`처럼 번호를 붙임. 촬영 일시가 없으면 원본의 파일 수정 시각을 씀
+- PNG → JPG 변환: `pngjs`로 읽고 `jpeg-js`로 품질 92 인코딩, 투명 부분은 흰색. EXIF·XMP·ICC 프로파일을 옮기고, PNG `CreationTime`만 있으면 `DateTimeOriginal`로 옮김
 - EXIF 복제 시 제외: 해상도·크기, 회전, 썸네일·미리보기, MakerNote, ICC 프로파일, xmpMM, Photoshop IRB
 - 지도: OpenStreetMap 타일 (인터넷 연결 필요)
 
@@ -61,11 +64,12 @@ Windows 빌드는 macOS에서도 만들 수 있지만, `exiftool-vendored.exe`�
 [한국어](#chojema-exifer) | **English**
 
 A Windows and macOS desktop app that edits the date/time and GPS of photos, and copies EXIF from one photo to another.
-Originals are never modified; results are always saved as a new file, `<name>_edited.<ext>`.
+Originals are never modified; results are always saved as a new file named after the date taken, `YYYY-MM-DD_HH-MM-SS_ed.<ext>`.
+PNG files are converted to JPG when saved, because many apps do not read EXIF in PNG.
 
 - Author: Chulwoo Park (2026)
 - License: MIT — see [LICENSE](LICENSE)
-- Current version: 0.9.1 — see [RELEASE_NOTES.md](RELEASE_NOTES.md) for changes
+- Current version: 0.10.0 — see [RELEASE_NOTES.md](RELEASE_NOTES.md) for changes
 - Download: [Releases](https://github.com/chojema/chojema-exifer/releases) page
 
 - Supported formats: JPEG, HEIC/HEIF, TIFF, WebP, PNG (RAW, GIF, BMP, and video are not supported)
@@ -109,5 +113,7 @@ The Windows build can also be made on macOS, but `exiftool-vendored.exe` must be
 - Date taken → EXIF DateTimeOriginal/CreateDate/OffsetTime*, XMP (exif, xmp, photoshop), IPTC (JPEG, TIFF), PNG CreationTime, GPS date/time (UTC), file creation time
 - Date modified → EXIF ModifyDate/OffsetTime, XMP ModifyDate/MetadataDate, PNG ModifyDate, file modification time
 - File creation time: `utimes` on macOS (setting an earlier time also moves the creation time), ExifTool `FileCreateDate` on Windows
+- Output file name: the saved file's date taken (the value you entered) → `2024-05-01_10-20-30_ed.jpg`. If the name exists, a number such as ` (2)` is added. Without a date taken, the original's file modification time is used
+- PNG → JPG conversion: read with `pngjs`, encoded with `jpeg-js` at quality 92; transparent areas become white. EXIF, XMP and the ICC profile are carried over, and a PNG `CreationTime` alone becomes `DateTimeOriginal`
 - Excluded from EXIF copy: resolution/dimensions, orientation, thumbnails/previews, MakerNote, ICC profile, xmpMM, Photoshop IRB
 - Map: OpenStreetMap tiles (internet connection required)

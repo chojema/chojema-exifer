@@ -1,5 +1,5 @@
-// Reading, date/GPS editing and EXIF copying. Every write goes to a new
-// "<name>_edited.<ext>" file; the original is never modified.
+// Reading, date/GPS editing and EXIF copying. Every write goes to a new file named
+// after the date taken, "YYYY-MM-DD_HH-MM-SS_ed.<ext>"; the original is never modified.
 const fs = require('fs');
 const path = require('path');
 const exiftool = require('./exiftool');
@@ -14,6 +14,13 @@ const SUPPORTED_TYPES = {
 };
 const SUPPORTED_EXTENSIONS = ['jpg', 'jpeg', 'heic', 'heif', 'tif', 'tiff', 'webp', 'png'];
 const IPTC_TYPES = new Set(['JPEG', 'TIFF']);
+// Formats whose EXIF most viewers and photo apps ignore; edits are saved as JPEG instead.
+const CONVERT_TO_JPEG = new Set(['PNG']);
+const JPEG_QUALITY = 92;
+
+function outputType(type) {
+  return CONVERT_TO_JPEG.has(type) ? 'JPEG' : type;
+}
 
 // ---------- date helpers ----------
 
@@ -57,6 +64,11 @@ function toEpoch(local, offset) {
 
 function pad(n) {
   return String(n).padStart(2, '0');
+}
+
+// Date -> "2024-05-01T10:20:30" in this computer's local time.
+function localStamp(d) {
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
 }
 
 function localOffsetAt(local) {
@@ -148,8 +160,10 @@ async function readMetadata(file) {
 
 // Builds the list of tags written for the simple "taken / modified / offset" input.
 // Each item: { tag, value, label, group }. value '' means delete the tag.
-function planDates({ type, taken, modified, offset, gpsPresent, xmpGps, fileTimes }) {
+// type is the input type; tags are planned for the saved type (PNG is saved as JPEG).
+function planDates({ type: inputType, taken, modified, offset, gpsPresent, xmpGps, fileTimes }) {
   if (!isValidOffset(offset)) throw new Error(`시간대 형식이 올바르지 않습니다: ${offset}`);
+  const type = outputType(inputType);
   const items = [];
   const add = (group, tag, value, label) => items.push({ group, tag, value, label });
 
@@ -197,15 +211,61 @@ function planDates({ type, taken, modified, offset, gpsPresent, xmpGps, fileTime
 
 // ---------- writing ----------
 
-function outputPath(file) {
-  const dir = path.dirname(file);
-  const ext = path.extname(file);
-  const base = path.basename(file, ext);
-  let candidate = path.join(dir, `${base}_edited${ext}`);
+// "<dir>/2024-05-01_10-20-30_ed.jpg" for taken "2024-05-01T10:20:30"; " (2)" etc. if taken.
+function outputPath(dir, taken, ext) {
+  const m = String(taken).match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?/);
+  const base = `${m[1]}-${m[2]}-${m[3]}_${m[4]}-${m[5]}-${m[6] || '00'}_ed`;
+  let candidate = path.join(dir, `${base}${ext}`);
   for (let i = 2; fs.existsSync(candidate); i++) {
-    candidate = path.join(dir, `${base}_edited (${i})${ext}`);
+    candidate = path.join(dir, `${base} (${i})${ext}`);
   }
   return candidate;
+}
+
+// PNG -> JPEG. Transparent areas become white; EXIF, XMP and the ICC profile are carried
+// over, and PNG CreationTime becomes DateTimeOriginal when the PNG has no EXIF date.
+async function convertToJpeg(src, dst) {
+  const { PNG } = require('pngjs');
+  const jpeg = require('jpeg-js');
+  const { width, height, data } = PNG.sync.read(fs.readFileSync(src));
+  for (let i = 0; i < data.length; i += 4) {
+    const a = data[i + 3];
+    if (a === 255) continue;
+    for (let c = i; c < i + 3; c++) data[c] = Math.round((data[c] * a + 255 * (255 - a)) / 255);
+    data[i + 3] = 255;
+  }
+  fs.writeFileSync(dst, jpeg.encode({ width, height, data }, JPEG_QUALITY).data);
+  await exiftool.write(dst, ['-tagsFromFile', src, '-ExifIFD:DateTimeOriginal<PNG:CreationTime', '-all:all', '-ICC_Profile']);
+}
+
+// Copies (or converts) the input to a temporary file next to it. finishWork() later
+// renames it after its date taken, which is only known once the new tags are written.
+async function startWork(file, type) {
+  const converted = CONVERT_TO_JPEG.has(type);
+  const ext = converted ? '.jpg' : path.extname(file);
+  const tmp = path.join(path.dirname(file), `.exifer-${process.pid}-${Date.now()}${ext}`);
+  try {
+    if (converted) await convertToJpeg(file, tmp);
+    else fs.copyFileSync(file, tmp);
+  } catch (e) {
+    fs.rmSync(tmp, { force: true });
+    throw e;
+  }
+  return { tmp, ext, converted, output: null };
+}
+
+// Names the output after its date taken; without one, the original's date taken or file time.
+async function finishWork(work, original) {
+  const meta = await readMetadata(work.tmp);
+  const taken = meta.taken || original.taken || original.fileModified || localStamp(new Date());
+  work.output = outputPath(path.dirname(work.tmp), taken, work.ext);
+  fs.renameSync(work.tmp, work.output);
+  return meta;
+}
+
+function abortWork(work) {
+  fs.rmSync(work.tmp, { force: true });
+  if (work.output) fs.rmSync(work.output, { force: true });
 }
 
 function gpsArgs(gps) {
@@ -271,8 +331,8 @@ function tagArg(item) {
 
 // params: { file, dates: [{tag, value}], gps: {mode, lat, lon, alt, xmp} }
 async function saveEdits({ file, dates = [], gps }) {
-  const out = outputPath(file);
-  fs.copyFileSync(file, out);
+  const original = await readMetadata(file);
+  const work = await startWork(file, original.type);
   try {
     const fileItems = dates.filter((d) => d.tag.startsWith('System:'));
     const tagItems = dates.filter((d) => !d.tag.startsWith('System:'));
@@ -281,13 +341,14 @@ async function saveEdits({ file, dates = [], gps }) {
       ? tagItems.filter((d) => !d.tag.startsWith('GPS:') && d.tag !== 'XMP-exif:GPSDateTime')
       : tagItems;
     const args = [...gpsArgs(gps), ...filtered.map(tagArg)];
-    const warnings = args.length ? (await exiftool.write(out, args)).warnings : [];
+    const warnings = args.length ? (await exiftool.write(work.tmp, args)).warnings : [];
+    await finishWork(work, original);
     const createItem = fileItems.find((d) => d.tag === 'System:FileCreateDate');
     const modifyItem = fileItems.find((d) => d.tag === 'System:FileModifyDate');
-    warnings.push(...await applyFileTimes(out, createItem && createItem.value, modifyItem && modifyItem.value));
-    return { output: out, warnings };
+    warnings.push(...await applyFileTimes(work.output, createItem && createItem.value, modifyItem && modifyItem.value));
+    return { output: work.output, converted: work.converted, warnings };
   } catch (e) {
-    fs.rmSync(out, { force: true });
+    abortWork(work);
     throw e;
   }
 }
@@ -350,8 +411,8 @@ async function copyExif({ source, target, mode = 'all', groups = [], replace = f
     tagList = chosen.flatMap((g) => COPY_GROUPS[g]);
   }
 
-  const out = outputPath(target);
-  fs.copyFileSync(target, out);
+  const original = await readMetadata(target);
+  const work = await startWork(target, original.type);
   try {
     const args = [];
     if (replace) {
@@ -359,24 +420,25 @@ async function copyExif({ source, target, mode = 'all', groups = [], replace = f
       args.push('-all=', '-tagsFromFile', '@', '-IFD0:Orientation', '-ICC_Profile');
     }
     args.push('-tagsFromFile', source, ...tagList);
-    const { warnings } = await exiftool.write(out, args);
+    const { warnings } = await exiftool.write(work.tmp, args);
+    const meta = await finishWork(work, original);
 
     if (fileTimes) {
-      const meta = await readMetadata(out);
       const off = meta.offset || localOffsetAt(meta.taken);
       const create = meta.taken ? toExif(meta.taken) + off : null;
       const modify = meta.modified ? toExif(meta.modified) + (meta.offset || localOffsetAt(meta.modified)) : create;
-      warnings.push(...await applyFileTimes(out, create, modify));
+      warnings.push(...await applyFileTimes(work.output, create, modify));
     }
-    return { output: out, warnings };
+    return { output: work.output, converted: work.converted, warnings };
   } catch (e) {
-    fs.rmSync(out, { force: true });
+    abortWork(work);
     throw e;
   }
 }
 
 module.exports = {
   SUPPORTED_EXTENSIONS,
+  CONVERT_TO_JPEG,
   readMetadata,
   planDates,
   saveEdits,

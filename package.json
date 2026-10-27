@@ -1,7 +1,7 @@
 {
   "name": "chojema-exifer",
   "productName": "Chojema EXIFer",
-  "version": "0.9.1",
+  "version": "0.10.0",
   "description": "Edit photo dates and GPS, and copy EXIF between photos",
   "main": "src/main/main.js",
   "author": "Chulwoo Park",
@@ -27,7 +27,9 @@
     "exiftool-vendored.exe": "^13.59.3",
     "exiftool-vendored.pl": "^13.59.3",
     "heic-decode": "^2.1.0",
+    "jpeg-js": "^0.4.4",
     "leaflet": "^1.9.4",
+    "pngjs": "^7.0.0",
     "utif": "^3.1.0"
   },
   "devDependencies": {

@@ -55,7 +55,12 @@ function hash(file) {
       });
       edited = res.output;
       assert.strictEqual(hash(file), before, 'original was modified');
-      assert.ok(/_edited( \(\d+\))?\.[a-z]+$/i.test(edited), edited);
+      assert.ok(/[\\/]2020-03-15_08-30-45_ed( \(\d+\))?\.[a-z]+$/i.test(edited), edited);
+      if (meta.type === 'PNG') {
+        assert.ok(res.converted && /\.jpg$/.test(edited), `PNG not converted: ${edited}`);
+      } else {
+        assert.ok(!res.converted && path.extname(edited) === path.extname(file), edited);
+      }
 
       const out = await md.readMetadata(edited);
       assert.strictEqual(out.taken, '2020-03-15T08:30:45');
@@ -66,7 +71,12 @@ function hash(file) {
       assert.strictEqual(out.tags['GPS:GPSDateStamp'], '2020:03:14');
       assert.strictEqual(out.tags['GPS:GPSTimeStamp'], '23:30:45');
       assert.strictEqual(out.tags['XMP-xmp:CreateDate'], '2020:03:15 08:30:45+09:00');
-      if (['JPEG', 'TIFF'].includes(meta.type)) assert.strictEqual(out.tags['IPTC:DateCreated'], '2020:03:15');
+      if (['JPEG', 'TIFF', 'PNG'].includes(meta.type)) assert.strictEqual(out.tags['IPTC:DateCreated'], '2020:03:15');
+      if (meta.type === 'PNG') {
+        assert.strictEqual(out.type, 'JPEG');
+        assert.strictEqual(out.width, meta.width, 'width changed');
+        assert.strictEqual(out.height, meta.height, 'height changed');
+      }
 
       const st = fs.statSync(edited);
       assert.strictEqual(st.mtime.toISOString(), '2021-01-01T18:04:05.000Z', `mtime ${st.mtime.toISOString()}`);
@@ -92,6 +102,8 @@ function hash(file) {
         assert.strictEqual(out.taken, '2020-03-15T08:30:45');
         assert.ok(out.gps && Math.abs(out.gps.lat - 37.5665) < 1e-6, 'gps not copied');
         assert.strictEqual(out.width, targetBefore.width, 'dimensions changed');
+        assert.ok(/[\\/]2020-03-15_08-30-45_ed( \(\d+\))?\.[a-z]+$/i.test(res.output), res.output);
+        assert.strictEqual(out.type, targetBefore.type === 'PNG' ? 'JPEG' : targetBefore.type);
         assert.strictEqual(out.orientation, targetBefore.orientation, 'orientation changed');
         assert.strictEqual(fs.statSync(res.output).mtime.toISOString(), '2021-01-01T18:04:05.000Z');
       });
@@ -118,6 +130,29 @@ function hash(file) {
     const out = await md.readMetadata(res.output);
     assert.strictEqual(out.taken, '2019-07-01T12:00:00');
     assert.strictEqual(out.offset, '-05:00');
+  });
+
+  await check('PNG with alpha and PNG CreationTime converts to JPEG', async () => {
+    const png = samples.find((s) => /\.png$/i.test(s));
+    const src = path.join(work, 'alpha.png');
+    fs.copyFileSync(png, src);
+    await exiftool.write(src, ['-all=', '-PNG:CreationTime=2018:06:07 09:10:11']);
+    const res = await md.saveEdits({ file: src, dates: [], gps: { mode: 'keep' } });
+    assert.ok(/[\\/]2018-06-07_09-10-11_ed\.jpg$/.test(res.output), res.output);
+    const out = await md.readMetadata(res.output);
+    assert.strictEqual(out.type, 'JPEG');
+    assert.strictEqual(out.taken, '2018-06-07T09:10:11');
+  });
+
+  await check('file without a date taken is named after its file time', async () => {
+    const jpg = samples.find((s) => /\.jpe?g$/i.test(s));
+    const bare = path.join(work, 'nodate.jpg');
+    fs.copyFileSync(jpg, bare);
+    await exiftool.write(bare, ['-all=']);
+    const t = new Date(2017, 0, 2, 3, 4, 5);
+    fs.utimesSync(bare, t, t);
+    const res = await md.saveEdits({ file: bare, dates: [], gps: { mode: 'keep' } });
+    assert.ok(/[\\/]2017-01-02_03-04-05_ed\.jpg$/.test(res.output), res.output);
   });
 
   console.log(failed ? `\n${failed} failed (work dir ${work})` : '\nall passed');
