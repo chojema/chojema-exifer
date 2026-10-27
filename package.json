@@ -1,0 +1,96 @@
+{
+  "name": "chojema-exifer",
+  "productName": "Chojema EXIFer",
+  "version": "0.9.1",
+  "description": "Edit photo dates and GPS, and copy EXIF between photos",
+  "main": "src/main/main.js",
+  "author": "Chulwoo Park",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/chojema/chojema-exifer.git"
+  },
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "test": "node test/run-tests.js",
+    "dist": "electron-builder --mac --win",
+    "dist:mac": "electron-builder --mac",
+    "dist:win": "electron-builder --win",
+    "postdist": "node scripts/clean-dist.js",
+    "postdist:mac": "node scripts/clean-dist.js",
+    "postdist:win": "node scripts/clean-dist.js",
+    "clean:dist": "node scripts/clean-dist.js",
+    "make:icons": "electron scripts/make-icons.js"
+  },
+  "dependencies": {
+    "exiftool-vendored.exe": "^13.59.3",
+    "exiftool-vendored.pl": "^13.59.3",
+    "heic-decode": "^2.1.0",
+    "leaflet": "^1.9.4",
+    "utif": "^3.1.0"
+  },
+  "devDependencies": {
+    "electron": "^45.0.0",
+    "electron-builder": "^26.18.0"
+  },
+  "build": {
+    "appId": "com.chojema.exifer",
+    "productName": "Chojema EXIFer",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "src/**/*",
+      "package.json"
+    ],
+    "asarUnpack": [
+      "node_modules/exiftool-vendored.pl/**",
+      "node_modules/exiftool-vendored.exe/**"
+    ],
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        }
+      ],
+      "category": "public.app-category.photography",
+      "files": [
+        "src/**/*",
+        "package.json",
+        "!node_modules/exiftool-vendored.exe/**"
+      ],
+      "icon": "build/icon.icns"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "files": [
+        "src/**/*",
+        "package.json",
+        "!node_modules/exiftool-vendored.pl/**"
+      ],
+      "icon": "build/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "artifactName": "${productName} Setup ${version}.${ext}"
+    },
+    "dmg": {
+      "artifactName": "${productName}-${version}-${arch}.${ext}"
+    },
+    "copyright": "Copyright © 2026 Chulwoo Park"
+  }
+}

@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!-- Chojema EXIFer app icon: a photo with a location pin whose head is a clock
+       (date + place = the metadata this app edits). Artwork sits on the 824px
+       macOS grid; scripts/make-icons.js scales it up for the Windows icon. -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#3f957c"/>
+      <stop offset="1" stop-color="#173f36"/>
+    </linearGradient>
+    <linearGradient id="shine" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity=".18"/>
+      <stop offset=".5" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#bfe3ef"/>
+      <stop offset="1" stop-color="#8cc3d4"/>
+    </linearGradient>
+    <linearGradient id="pin" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffcf63"/>
+      <stop offset="1" stop-color="#ea8a2a"/>
+    </linearGradient>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="14" stdDeviation="16" flood-color="#06201a" flood-opacity=".45"/>
+    </filter>
+    <clipPath id="photoClip"><rect x="292" y="292" width="400" height="270" rx="22"/></clipPath>
+  </defs>
+
+  <g id="art">
+    <rect x="100" y="100" width="824" height="824" rx="185" fill="url(#bg)"/>
+    <rect x="100" y="100" width="824" height="824" rx="185" fill="url(#shine)"/>
+
+    <!-- photo print -->
+    <g transform="rotate(-7 492 470)" filter="url(#shadow)">
+      <rect x="262" y="262" width="460" height="400" rx="40" fill="#f7f4ec"/>
+      <g clip-path="url(#photoClip)">
+        <rect x="292" y="292" width="400" height="270" fill="url(#sky)"/>
+        <circle cx="610" cy="360" r="34" fill="#f5b942"/>
+        <path d="M292 562 L410 420 L478 492 L540 430 L692 562 Z" fill="#2f6f5e"/>
+        <path d="M292 562 L372 478 L452 562 Z" fill="#4f9c84"/>
+      </g>
+      <!-- metadata lines -->
+      <rect x="292" y="588" width="210" height="18" rx="9" fill="#d6d0c2"/>
+      <rect x="292" y="620" width="140" height="18" rx="9" fill="#e3ded2"/>
+    </g>
+
+    <!-- location pin with a clock face -->
+    <g filter="url(#shadow)">
+      <path d="M706 818 L608.4 646.3 A118 118 0 1 1 803.6 646.3 Z" fill="url(#pin)"/>
+      <circle cx="706" cy="580" r="80" fill="#fffaf0"/>
+      <g stroke="#1d4a3f" stroke-linecap="round">
+        <line x1="706" y1="580" x2="706" y2="530" stroke-width="16"/>
+        <line x1="706" y1="580" x2="743" y2="600" stroke-width="16"/>
+      </g>
+      <g fill="#1d4a3f" opacity=".55">
+        <circle cx="706" cy="514" r="6"/><circle cx="772" cy="580" r="6"/>
+        <circle cx="706" cy="646" r="6"/><circle cx="640" cy="580" r="6"/>
+      </g>
+      <circle cx="706" cy="580" r="12" fill="#ea8a2a"/>
+    </g>
+  </g>
+</svg>

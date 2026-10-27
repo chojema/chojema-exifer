@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: file: https://tile.openstreetmap.org; connect-src 'none'">
+  <title>Chojema EXIFer</title>
+  <link rel="stylesheet" href="../../node_modules/leaflet/dist/leaflet.css">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">Chojema <b>EXIFer</b></div>
+    <nav class="tabs" role="tablist">
+      <button role="tab" class="tab active" data-tab="edit" aria-selected="true">일시·GPS 편집</button>
+      <button role="tab" class="tab" data-tab="copy" aria-selected="false">EXIF 복제</button>
+    </nav>
+    <div class="note">원본은 그대로 두고 <code>_edited</code> 파일로 저장합니다</div>
+  </header>
+
+  <!-- ===== 일시·GPS 편집 ===== -->
+  <main id="tab-edit" class="tabpanel">
+    <section class="col photo-col">
+      <div class="drop" id="edit-drop" tabindex="0">
+        <div class="drop-empty">
+          <div class="drop-title">사진을 끌어다 놓거나 클릭해서 선택</div>
+          <div class="drop-sub">JPEG · HEIC/HEIF · TIFF · WebP · PNG</div>
+        </div>
+        <img class="drop-img" alt="">
+        <div class="drop-msg"></div>
+      </div>
+      <dl class="info" id="edit-info"></dl>
+      <details class="alltags">
+        <summary>전체 메타데이터 보기</summary>
+        <div class="tagtable-wrap"><table class="tagtable" id="edit-alltags"></table></div>
+      </details>
+    </section>
+
+    <section class="col form-col" id="edit-form" aria-disabled="true">
+      <fieldset class="card">
+        <legend>일시</legend>
+        <div class="row">
+          <label for="taken">촬영 일시</label>
+          <input type="datetime-local" step="1" id="taken">
+          <span class="cur" id="taken-cur"></span>
+        </div>
+        <div class="row">
+          <label for="modified">수정 일시</label>
+          <input type="datetime-local" step="1" id="modified">
+          <button type="button" class="small" id="same-as-taken">촬영 일시와 같게</button>
+          <span class="cur" id="modified-cur"></span>
+        </div>
+        <div class="row">
+          <label for="offset">시간대</label>
+          <select id="offset"></select>
+          <span class="cur" id="offset-cur"></span>
+        </div>
+        <label class="check">
+          <input type="checkbox" id="filetimes" checked>
+          파일 생성·수정 시각(탐색기·Finder에 보이는 값)도 함께 변경
+        </label>
+        <details class="advanced" id="advanced">
+          <summary>고급 보기 — 기록될 태그 <span id="plan-count"></span></summary>
+          <p class="hint">위 입력값이 아래 태그에 자동으로 들어갑니다. 개별 값을 고치거나 체크를 해제해 제외할 수 있습니다. 값을 비우면 해당 태그를 삭제합니다.</p>
+          <div class="tagtable-wrap"><table class="tagtable plan" id="plan"></table></div>
+        </details>
+      </fieldset>
+
+      <fieldset class="card">
+        <legend>GPS</legend>
+        <div class="seg" role="radiogroup">
+          <label><input type="radio" name="gpsmode" value="keep" checked> 유지</label>
+          <label><input type="radio" name="gpsmode" value="set"> 새로 지정</label>
+          <label><input type="radio" name="gpsmode" value="remove"> 삭제</label>
+          <span class="cur" id="gps-cur"></span>
+        </div>
+        <div class="gps-inputs">
+          <label>위도 <input type="text" id="lat" inputmode="decimal" placeholder="예: 37.5665"></label>
+          <label>경도 <input type="text" id="lon" inputmode="decimal" placeholder="예: 126.9780"></label>
+          <label>고도(m) <input type="text" id="alt" inputmode="decimal" placeholder="선택"></label>
+        </div>
+        <p class="hint">지도를 클릭하거나 "37.5665, 126.9780"처럼 붙여넣으면 위도·경도가 함께 입력됩니다.</p>
+        <div class="map" id="map"></div>
+      </fieldset>
+
+      <div class="actions">
+        <button type="button" class="primary" id="save" disabled>새 파일로 저장</button>
+      </div>
+      <div class="result" id="edit-result" hidden></div>
+    </section>
+  </main>
+
+  <!-- ===== EXIF 복제 ===== -->
+  <main id="tab-copy" class="tabpanel" hidden>
+    <div class="pair">
+      <section class="col">
+        <h2>원본 <small>EXIF를 가져올 사진</small></h2>
+        <div class="drop" id="src-drop" tabindex="0">
+          <div class="drop-empty"><div class="drop-title">원본 사진 선택</div><div class="drop-sub">끌어다 놓거나 클릭</div></div>
+          <img class="drop-img" alt="">
+          <div class="drop-msg"></div>
+        </div>
+        <dl class="info" id="src-info"></dl>
+      </section>
+
+      <div class="pair-mid">
+        <div class="arrow" aria-hidden="true">→</div>
+        <button type="button" class="small" id="swap" title="원본과 대상 바꾸기">⇄ 바꾸기</button>
+      </div>
+
+      <section class="col">
+        <h2>대상 <small>EXIF를 받을 사진</small></h2>
+        <div class="drop" id="dst-drop" tabindex="0">
+          <div class="drop-empty"><div class="drop-title">대상 사진 선택</div><div class="drop-sub">끌어다 놓거나 클릭</div></div>
+          <img class="drop-img" alt="">
+          <div class="drop-msg"></div>
+        </div>
+        <dl class="info" id="dst-info"></dl>
+      </section>
+    </div>
+
+    <fieldset class="card copy-options">
+      <legend>복제 범위</legend>
+      <div class="seg" role="radiogroup">
+        <label><input type="radio" name="copymode" value="all" checked> 전체</label>
+        <label><input type="radio" name="copymode" value="groups"> 항목 선택</label>
+      </div>
+      <div class="groups" id="groups">
+        <label class="check"><input type="checkbox" value="dates" checked> 일시</label>
+        <label class="check"><input type="checkbox" value="gps" checked> GPS</label>
+        <label class="check"><input type="checkbox" value="camera"> 카메라·렌즈</label>
+        <label class="check"><input type="checkbox" value="exposure"> 촬영 설정(노출·초점 등)</label>
+        <label class="check"><input type="checkbox" value="description"> 작성자·저작권·설명</label>
+      </div>
+      <label class="check"><input type="checkbox" id="replace"> 대상 사진의 기존 메타데이터를 지운 뒤 복제</label>
+      <label class="check"><input type="checkbox" id="copy-filetimes" checked> 파일 생성·수정 시각도 복제된 일시에 맞춤</label>
+      <p class="hint">해상도, 회전 정보, 썸네일, 제조사 전용 데이터(MakerNote), 색상 프로파일은 대상 사진의 것을 유지합니다.</p>
+      <div class="actions">
+        <button type="button" class="primary" id="copy" disabled>복제해서 새 파일로 저장</button>
+      </div>
+      <div class="result" id="copy-result" hidden></div>
+    </fieldset>
+  </main>
+
+  <script src="../../node_modules/leaflet/dist/leaflet.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
