@@ -14,6 +14,16 @@ PNG는 EXIF를 읽지 못하는 앱이 많아 JPG로 변환해 저장합니다.
 - 지원 형식: JPEG, HEIC/HEIF, TIFF, WebP, PNG (RAW·GIF·BMP·동영상 제외)
 - 구성: Electron + ExifTool(`exiftool-vendored.pl` / `exiftool-vendored.exe`로 동봉)
 
+## 화면 (macOS)
+
+**일시·GPS 편집** — 촬영·수정 일시와 시간대를 입력하고, 지도나 좌표로 GPS를 지정합니다.
+
+![일시·GPS 편집 화면](screenshot/2026-10-27_22-22-15.png)
+
+**EXIF 복제** — 왼쪽 원본 사진의 EXIF를 오른쪽 대상 사진에 전체 또는 항목별로 복제합니다.
+
+![EXIF 복제 화면](screenshot/2026-10-27_22-22-50.png)
+
 ## 개발
 
 ```sh
@@ -74,6 +84,16 @@ PNG files are converted to JPG when saved, because many apps do not read EXIF in
 
 - Supported formats: JPEG, HEIC/HEIF, TIFF, WebP, PNG (RAW, GIF, BMP, and video are not supported)
 - Built with: Electron + ExifTool (bundled via `exiftool-vendored.pl` / `exiftool-vendored.exe`)
+
+### Screenshots (macOS)
+
+**Date/GPS editing** — enter the date taken, date modified and time zone, and set GPS on the map or by coordinates. (The UI is in Korean.)
+
+![Date/GPS editing screen](screenshot/2026-10-27_22-22-15.png)
+
+**EXIF copy** — copy the EXIF of the source photo on the left to the target photo on the right, in full or by group.
+
+![EXIF copy screen](screenshot/2026-10-27_22-22-50.png)
 
 ### Development
 
